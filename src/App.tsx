@@ -1,9 +1,6 @@
-import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, Info, AlertTriangle } from "lucide-react";
 import { useApp } from "./store";
-import { readPendingGraph } from "./lib/pdfExport";
-import { getSupabase } from "./lib/supabase";
 import Landing from "./components/Landing";
 import Analyzing from "./components/Analyzing";
 import MapScreen from "./components/MapScreen";
@@ -40,21 +37,6 @@ function ToastHost() {
 export default function App() {
   const phase = useApp((s) => s.phase);
   const anim = useApp((s) => s.anim);
-  const boot = useApp((s) => s.boot);
-
-  useEffect(() => {
-    let active = true;
-    const restorePendingGraph = async () => {
-      const supabase = getSupabase();
-      if (!supabase) return;
-      const { data: { session } } = await supabase.auth.getSession();
-      const pending = readPendingGraph();
-      if (active && session && pending && useApp.getState().phase === "landing") boot(pending);
-    };
-    void restorePendingGraph();
-    return () => { active = false; };
-  }, [boot]);
-
   return (
     <div className={`h-full w-full overflow-hidden bg-ink-950 font-body text-ink-50 ${anim ? "" : "anim-off"}`}>
       <AnimatePresence mode="wait">

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PDFDocument } from "pdf-lib";
-import { generatePdf, sanitizeGraph } from "../../supabase/functions/pdf-export/core";
+import { generatePdf, sanitizeGraph } from "../lib/pdfCore";
 
 const graph = {
   repo: { name: "Demo", org: "atlas", branch: "main" },

@@ -22,6 +22,7 @@ Atlas is a visual product-map interface for understanding a codebase. Instead of
 - Complexity and history views for architecture analysis
 - Code viewer for inspecting relevant source files
 - Archive export to download the project source as a zip
+- Client-side PDF export for sharing visual studies
 
 ## Tech stack
 
@@ -32,6 +33,7 @@ Atlas is a visual product-map interface for understanding a codebase. Instead of
 - React Flow for interactive graph rendering
 - Framer Motion for interface transitions
 - Lucide icons for UI visuals
+- pdf-lib for browser-generated PDF exports
 
 ## Prerequisites
 
@@ -57,6 +59,18 @@ npm run build    # run TypeScript checks and produce a production build in dist/
 npm run preview  # preview the production build locally
 npm test         # run the Vitest test suite
 ```
+
+## Free deployment
+
+Atlas is a static Vite app and can be deployed on the Vercel Hobby plan for a personal, non-commercial showcase. PDF files are generated in the visitor's browser, so the deployment does not require Supabase, a database, authentication, payment setup, or environment variables.
+
+1. Import the GitHub repository into Vercel.
+2. Keep the framework preset as `Vite`.
+3. Set the build command to `npm run build`.
+4. Set the output directory to `dist`.
+5. Deploy with no environment variables.
+
+Every push to the production branch can then trigger a new Vercel deployment. GitHub repository analysis uses the public GitHub API and may be subject to its anonymous rate limits.
 
 ## Project structure
 

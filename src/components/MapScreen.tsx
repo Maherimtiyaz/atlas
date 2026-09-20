@@ -3,14 +3,13 @@ import { ReactFlow, Background, BackgroundVariant, MiniMap, type ReactFlowInstan
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Flame, Map as MapIcon, GitCommit, Route, Play, Pause, X, RotateCcw,
-  Compass, ChevronRight, Keyboard, ChevronLeft, Activity, Download, Loader2, Mail,
+  Compass, ChevronRight, Keyboard, ChevronLeft, Activity, Download, Loader2,
 } from "lucide-react";
 import { useApp } from "../store";
 import type { CFEdge, CFNode, NodeType } from "../model";
 import { TYPE_COLOR, MONTHS } from "../model";
 import { findPath, pathEdgeIds } from "../lib/engine";
-import { clearPendingGraph, requestPdfExport, savePendingGraph, PdfExportError } from "../lib/pdfExport";
-import { getSupabase, sendMagicLink } from "../lib/supabase";
+import { requestPdfExport } from "../lib/pdfExport";
 import { nodeTypes, edgeTypes, ZoomGate, Legend, ZoomControls } from "./graphBits";
 import Explorer from "./Explorer";
 import Inspector from "./Inspector";
@@ -352,53 +351,22 @@ function TopBar() {
   const stats = useApp((s) => s.stats);
   const notes = useApp((s) => s.notes);
   const [exporting, setExporting] = useState(false);
-  const [authOpen, setAuthOpen] = useState(false);
-  const [email, setEmail] = useState("");
-  const [authMessage, setAuthMessage] = useState("");
   const [exportError, setExportError] = useState("");
 
   const graph = { repo, nodes, edges, stats, notes };
   const downloadPdf = async () => {
     if (exporting) return;
     setExportError("");
-    const supabase = getSupabase();
-    if (!supabase) {
-      setExportError("PDF downloads are not configured yet.");
-      return;
-    }
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      try {
-        savePendingGraph(graph);
-        setAuthMessage("");
-        setAuthOpen(true);
-      } catch (error) {
-        setExportError(error instanceof Error ? error.message : "Could not prepare the graph for sign-in.");
-      }
-      return;
-    }
     setExporting(true);
     try {
-      clearPendingGraph();
-      await requestPdfExport(graph, crypto.randomUUID());
+      await requestPdfExport(graph);
       notify("PDF downloaded", "ok");
     } catch (error) {
-      const message = error instanceof PdfExportError ? error.message : "PDF generation failed. Please try again.";
+      const message = error instanceof Error ? error.message : "PDF generation failed. Please try again.";
       setExportError(message);
       notify(message, "warn");
     } finally {
       setExporting(false);
-    }
-  };
-
-  const submitMagicLink = async () => {
-    if (!email.trim()) return;
-    setAuthMessage("Sending sign-in link…");
-    try {
-      await sendMagicLink(email.trim());
-      setAuthMessage("Check your email, then return here to download the PDF.");
-    } catch (error) {
-      setAuthMessage(error instanceof Error ? error.message : "Could not send the sign-in link.");
     }
   };
 
@@ -495,30 +463,11 @@ function TopBar() {
         {(repo.org[0] ?? "A").toUpperCase()}
       </span>
 
-      {(authOpen || exportError) && (
-        <div className="pointer-events-auto fixed inset-0 z-80 flex items-center justify-center bg-black/70 p-6 backdrop-blur-sm" onMouseDown={(event) => event.target === event.currentTarget && setAuthOpen(false)}>
-          <div className="panel w-[min(420px,92vw)] rounded-xl p-5 shadow-2xl">
-            {authOpen ? (
-              <>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="font-display text-[16px] font-bold text-ink-50">Sign in to download</h2>
-                    <p className="mt-1 text-[11.5px] leading-relaxed text-ink-400">Your first successful PDF download is free. Sign in with a one-time email link to continue.</p>
-                  </div>
-                  <button onClick={() => setAuthOpen(false)} className="text-ink-400 hover:text-ink-50" aria-label="Close sign-in dialog"><X size={16} /></button>
-                </div>
-                <div className="mt-4 flex gap-2">
-                  <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" placeholder="you@example.com" className="min-w-0 flex-1 rounded-lg border border-ink-700 bg-ink-950 px-3 py-2 text-[12px] text-ink-200 outline-none placeholder:text-ink-600 focus:border-cyan-400/50" />
-                  <button onClick={submitMagicLink} className="btn-primary flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-[12px] font-semibold"><Mail size={13} /> Send link</button>
-                </div>
-                {authMessage && <p className="mt-3 text-[11px] leading-relaxed text-cyan-200">{authMessage}</p>}
-              </>
-            ) : (
-              <div className="flex items-start justify-between gap-4">
-                <p className="text-[12px] leading-relaxed text-red-200">{exportError}</p>
-                <button onClick={() => setExportError("")} className="text-ink-400 hover:text-ink-50" aria-label="Close error"><X size={16} /></button>
-              </div>
-            )}
+      {exportError && (
+        <div className="pointer-events-auto fixed inset-0 z-80 flex items-center justify-center bg-black/70 p-6 backdrop-blur-sm" onMouseDown={(event) => event.target === event.currentTarget && setExportError("")}>
+          <div className="panel flex w-[min(420px,92vw)] items-start justify-between gap-4 rounded-xl p-5 shadow-2xl">
+            <p className="text-[12px] leading-relaxed text-red-200">{exportError}</p>
+            <button onClick={() => setExportError("")} className="text-ink-400 hover:text-ink-50" aria-label="Close error"><span aria-hidden="true">×</span></button>
           </div>
         </div>
       )}

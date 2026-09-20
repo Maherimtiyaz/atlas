@@ -1,0 +1,4 @@
+project_id = ""
+
+[functions.pdf-export]
+verify_jwt = false
